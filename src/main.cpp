@@ -1,4 +1,11 @@
 #include "main.h"
+using namespace pros;
+Controller master (E_CONTROLLER_MASTER);
+Motor frontRight(1);
+Motor frontLeft(2);
+Motor backRight(3);
+Motor backLeft(4);
+
 //marcello, vealy, max, and rowan
 /**
  * A callback function for LLEMU's center button.
