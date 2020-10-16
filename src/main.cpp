@@ -6,6 +6,29 @@ Motor frontLeft(2);
 Motor backRight(3);
 Motor backLeft(4);
 
+class robotState
+{
+	void update();
+};
+
+class controllerState
+{
+public:
+	void getControllerState();
+public:
+	bool rightBumper1;
+  bool leftBumper1;
+  bool rightBumper2;
+  bool leftBumper2;
+	int leftStick;
+	int rightStick;
+	bool a;
+	bool b;
+	bool y;
+	bool rarrow;
+	bool uarrow;
+	bool darrow;
+}
 //marcello, vealy, max, and rowan
 /**
  * A callback function for LLEMU's center button.
