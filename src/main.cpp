@@ -1,33 +1,78 @@
 #include "main.h"
-using namespace pros;
-Controller master (E_CONTROLLER_MASTER);
-Motor frontRight(1);
+using namespace pros; //declares pros syntax use
+Controller master (E_CONTROLLER_MASTER);//Connects to controller
+Motor frontRight(1); //Connects motor and port
 Motor frontLeft(2);
 Motor backRight(3);
 Motor backLeft(4);
 
+//OUTPUT TO ROBOT CLASS
 class robotState
 {
-	void update();
+	void update();//update function: WIP
+}; //always use colon after class
+
+//CONTROLLER STICK INPUT CLASS (to store data)
+class Vec2d{ //vec2d = 2d vector
+	public: // use public: header to separate fucntions and variables
+		Vec2d(int xVar, int yVar); //Defines Vec2d to take two integer inputs
+	public:
+		//Defines x and y variables
+		int x;
+		int y;
 };
 
+//Enters x and y inputs into variables, stores in Vec2d function
+Vec2d::Vec2d(int xVar, int yVar){
+	x=xVar;
+	y=yVar;
+}
+
+//CONTROLLER INPUT CLASS
 class controllerState
 {
+public://public field- any function can access this
+	void getControllerState();//declares controller input function
 public:
-	void getControllerState();
-public:
-	bool rightBumper1;
+	//defines controller input variables
+	bool rightBumper1; //bool: is_pressed/!is_pressed
   bool leftBumper1;
   bool rightBumper2;
   bool leftBumper2;
-	int leftStick;
-	int rightStick;
 	bool a;
 	bool b;
+	bool x;
 	bool y;
-	bool rarrow;
-	bool uarrow;
-	bool darrow;
+	bool uArrow;
+	bool dArrow;
+	bool lArrow;
+	bool rArrow;
+	Vec2d leftStick; //creates an object of type Vec2d (which we created above)
+	Vec2d rightStick;
+};
+
+//CONTROLLER FUNCTION
+void controllerState::getControllerState()//declares controller function
+{
+	//Connects bumpers
+	leftBumper1 = master.get_digital(DIGITAL_L1);
+	rightBumper1 = master.get_digital(DIGITAL_R1);
+	leftBumper2 = master.get_digital(DIGITAL_L2);
+	rightBumper2 = master.get_digital(DIGITAL_R2);
+	//Connects ABY buttons
+	a = master.get_digital_new_press(DIGITAL_A); //_new_press added to prevent spamming due to frequent use
+	b = master.get_digital(DIGITAL_B);
+	y = master.get_digital(DIGITAL_Y);
+	//Connects arrow read_buttons
+	uArrow = master.get_digital(DIGITAL_UP);
+	dArrow = master.get_digital(DIGITAL_DOWN);
+	lArrow = master.get_digital(DIGITAL_LEFT);
+	rArrow = master.get_digital(DIGITAL_RIGHT);
+	//Connects controller stick inputs (x and y for each) (**analog inputs)
+	leftStick.x = master.get_analog(ANALOG_LEFT_X);
+	leftStick.y = master.get_analog(ANALOG_LEFT_Y);
+	rightStick.x = master.get_analog(ANALOG_RIGHT_X);
+	rightStick.y = master.get_analog(ANALOG_RIGHT_Y);
 }
 //marcello, vealy, max, and rowan
 /**
