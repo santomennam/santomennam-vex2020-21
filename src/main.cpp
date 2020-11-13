@@ -6,12 +6,27 @@ Motor frontLeft(11);
 Motor backRight(13);
 Motor backLeft(12);
 Motor lift(17);
-Motor intake(4);
-Motor intakeLift(6);
-
+Motor intakeLeft(4);
+Motor intakeRight(6);
+Motor roller(7);
 class robotState
 {
-	void update();
+public:
+	robotState();
+	void rightMotors(int voltage, int reps);
+	void leftMotors(int voltage, int reps);
+	void forward(int voltage, int reps);
+	void backward(int voltage, int reps);
+	void raise(int voltage, int reps);
+	void lower(int voltage, int reps);
+	void intakeIn(int voltage, int reps);
+	void intakeOut(int voltage, int reps);
+	void brakeLeft();
+	void brakeRight();
+	void rollerForward(int voltage, int reps);
+	void rollerBackwards(int voltage, int reps);
+public:
+	int delay = 10;
 };
 class Vec2d
 {
@@ -112,8 +127,113 @@ void on_center_button() {
 		pros::lcd::clear_line(2);
 	}
 }
+robotState::robotState()
+{
+	delay = 10;
+}
+void robotState::rightMotors(int voltage, int reps)
+{
+	for(int i =0; i<reps; i++)
+	{
+		frontRight.move(voltage);
+		backRight.move(voltage);
+		pros::delay(delay);
+	}
 
+}
+void robotState::leftMotors(int voltage, int reps)
+{
+	for(int i = 0; i<reps; i++)
+	{
+	frontLeft.move(voltage);
+	backLeft.move(voltage);
+	pros::delay(delay);
+}
 
+}
+void robotState::intakeIn(int voltage, int reps)
+{
+	for(int i = 0; i < reps; i++)
+	{
+		intakeLeft.move(voltage);
+		intakeRight.move(-voltage);
+		pros::delay(delay);
+	}
+
+}
+void robotState::intakeOut(int voltage, int reps)
+{
+	for(int i = 0; i < reps; i++)
+	{
+		intakeLeft.move(-voltage);
+		intakeRight.move(voltage);
+		pros::delay(delay);
+	}
+
+}
+void robotState::lower(int voltage, int reps)
+{
+	for(int i = 0; i < reps; i++)
+	{
+		lift.move(-voltage);
+		pros::delay(delay);
+	}
+	lift.set_brake_mode(E_MOTOR_BRAKE_HOLD);
+}
+void robotState::raise(int voltage, int reps)
+{
+	for(int i = 0; i < reps; i++)
+	{
+		pros::delay(delay);
+	}
+
+	lift.set_brake_mode(E_MOTOR_BRAKE_HOLD);
+}
+void robotState::brakeLeft()
+{
+	backLeft.set_brake_mode(E_MOTOR_BRAKE_HOLD);
+	frontLeft.set_brake_mode(E_MOTOR_BRAKE_HOLD);
+}
+void robotState::brakeRight()
+{
+	backRight.set_brake_mode(E_MOTOR_BRAKE_HOLD);
+	frontRight.set_brake_mode(E_MOTOR_BRAKE_HOLD);
+}
+void robotState::forward(int voltage, int reps)
+{
+
+		rightMotors(voltage, reps);
+		leftMotors(voltage, reps);
+		pros::delay(delay);
+
+	brakeLeft();
+	brakeRight();
+
+}
+void robotState::backward(int voltage, int reps)
+{
+	rightMotors(-voltage, reps);
+	leftMotors(-voltage, reps);
+		pros::delay(delay);
+	brakeLeft();
+	brakeRight();
+}
+void robotState::rollerForward(int voltage, int reps)
+{
+	for(int i = 0; i < reps; i++)
+	{
+		roller.move(voltage);
+		pros::delay(delay);
+	}
+}
+void robotState::rollerBackwards(int voltage, int reps)
+{
+	for(int i = 0; i < reps; i++)
+	{
+		roller.move(-voltage);
+		pros::delay(delay);
+	}
+}
 /**
  * Runs initialization code. This occurs as soon as the program is started.
  *
@@ -162,6 +282,9 @@ void competition_initialize() {}
  * from where it left off.
  */
 void autonomous() {}
+//ALL VOLTAGES ARE POSITIVE!!!!!!!!!!!
+robotState vexBOT();
+vexBOT.rollerBackwards(10,10);
 
 /**
  * Runs the operator control code. This function will be started in its own task
@@ -186,20 +309,24 @@ void opcontrol() {
 	while (true) {
 		controls.getControllerState();
 		frontLeft.move(controls.leftStick.y);
-		frontLeft.move(controls.leftStick.y);
+		backLeft.move(controls.leftStick.y);
 		frontRight.move(-controls.rightStick.y);
 		backRight.move(-controls.rightStick.y);
 		if(controls.rightBumper1)
 		{
-			intake.move(intakeSpeed);
+			intakeLeft.move(intakeSpeed);
+			intakeRight.move(-intakeSpeed);
 		}
 		else if(controls.rightBumper2)
 		{
-			intake.move(-intakeSpeed);
+			intakeLeft.move(-intakeSpeed);
+			intakeRight.move(intakeSpeed);
 		}
 		else{
-			intake.move(0);
-			intake.set_brake_mode(E_MOTOR_BRAKE_HOLD);
+			intakeLeft.move(0);
+			intakeRight.move(0);
+			intakeRight.set_brake_mode(E_MOTOR_BRAKE_HOLD);
+			intakeLeft.set_brake_mode(E_MOTOR_BRAKE_HOLD);
 		}
 
 		if(controls.leftBumper1)
@@ -215,18 +342,7 @@ void opcontrol() {
 			lift.set_brake_mode(E_MOTOR_BRAKE_HOLD);
 		}
 
-		if(controls.uarrow || controls.x)
-		{
-			intakeLift.move(intakeLiftSpeed);
-		}
-		else if(controls.darrow || controls.b)
-		{
-				intakeLift.move(-intakeLiftSpeed);
-		}
-		else{
-			intakeLift.move(0);
-			intakeLift.set_brake_mode(E_MOTOR_BRAKE_HOLD);
-		}
+
 		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
 		                 (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
 		                 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);
