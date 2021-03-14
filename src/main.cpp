@@ -1,33 +1,14 @@
 #include "main.h"
 using namespace pros;
 Controller master (E_CONTROLLER_MASTER);
-Motor frontRight(14);
-Motor frontLeft(11);
-Motor backRight(13);
-Motor backLeft(12);
-Motor lift(17);
-Motor intakeLeft(4);
-Motor intakeRight(6);
-Motor roller(7);
-class robotState
-{
-public:
-	robotState();
-	void rightMotors(int voltage, int reps);
-	void leftMotors(int voltage, int reps);
-	void forward(int voltage, int reps);
-	void backward(int voltage, int reps);
-	void raise(int voltage, int reps);
-	void lower(int voltage, int reps);
-	void intakeIn(int voltage, int reps);
-	void intakeOut(int voltage, int reps);
-	void brakeLeft();
-	void brakeRight();
-	void rollerForward(int voltage, int reps);
-	void rollerBackwards(int voltage, int reps);
-public:
-	int delay = 10;
-};
+Motor front(2);
+Motor backRight(12);
+Motor backLeft(19);
+Motor lift(1);
+Motor intakeLeft(10);
+Motor intakeRight(9);
+Motor roller(4);
+
 class Vec2d
 {
 public:
@@ -98,6 +79,27 @@ controllerState::controllerState()
 	 darrow =0;
 	 larrow =0;
 }
+class robotState
+{
+public:
+	void rightMotors(int voltage, int reps);
+	void leftMotors(int voltage, int reps);
+	void forward(int voltage, int reps);
+	void frontMove();
+	void backward(int voltage, int reps);
+	void raise(int voltage, int reps);
+	void lower(int voltage,int reps);
+	void intakeIn(int voltage);
+	void intakeOut(int voltage);
+	void brakeLeft();
+	void brakeRight();
+	void brakeFront();
+	void rollerForward(int voltage);
+	void rollerBackwards(int voltage);
+	void turn(int voltageLeft, int reps);
+public:
+	int delay = 1;
+};
 //marcello, vealy, max, and rowan
 /**
  * A callback function for LLEMU's center button.
@@ -106,15 +108,11 @@ controllerState::controllerState()
  * "I was pressed!" and nothing.
  */
  void stopwheels(){
-    frontLeft.move(0);
-    frontRight.move(0);
     backRight.move(0);
     backLeft.move(0);
 }
 
 void setDriveVoltage(int voltL, int voltR){
-	frontLeft=voltL;
-	frontRight=-voltR;
 	backRight=-voltR;
 	backLeft=voltL;
 }
@@ -127,112 +125,122 @@ void on_center_button() {
 		pros::lcd::clear_line(2);
 	}
 }
-robotState::robotState()
-{
-	delay = 10;
-}
-void robotState::rightMotors(int voltage, int reps)
-{
+void robotState::rightMotors(int voltage, int reps){
+
+	backRight.move(voltage);
 	for(int i =0; i<reps; i++)
 	{
-		frontRight.move(voltage);
-		backRight.move(voltage);
 		pros::delay(delay);
 	}
-
+	backRight.move(0);
 }
 void robotState::leftMotors(int voltage, int reps)
 {
+	backLeft.move(voltage);
 	for(int i = 0; i<reps; i++)
 	{
-	frontLeft.move(voltage);
-	backLeft.move(voltage);
-	pros::delay(delay);
+		pros::delay(delay);
+	}
+	backLeft.move(0);
 }
-
-}
-void robotState::intakeIn(int voltage, int reps)
+void robotState::intakeIn(int voltage)
 {
-	for(int i = 0; i < reps; i++)
-	{
 		intakeLeft.move(voltage);
 		intakeRight.move(-voltage);
 		pros::delay(delay);
-	}
-
 }
-void robotState::intakeOut(int voltage, int reps)
+void robotState::intakeOut(int voltage)
 {
-	for(int i = 0; i < reps; i++)
-	{
 		intakeLeft.move(-voltage);
 		intakeRight.move(voltage);
 		pros::delay(delay);
-	}
-
 }
 void robotState::lower(int voltage, int reps)
 {
+		lift.move(-voltage);
 	for(int i = 0; i < reps; i++)
 	{
-		lift.move(-voltage);
 		pros::delay(delay);
 	}
+	lift.move(0);
 	lift.set_brake_mode(E_MOTOR_BRAKE_HOLD);
 }
 void robotState::raise(int voltage, int reps)
 {
+	lift.move(voltage);
 	for(int i = 0; i < reps; i++)
 	{
 		pros::delay(delay);
 	}
-
+	lift.move(0);
 	lift.set_brake_mode(E_MOTOR_BRAKE_HOLD);
+}
+void robotState::brakeFront()
+{
+	front.move(0);
+	front.set_brake_mode(E_MOTOR_BRAKE_COAST);
 }
 void robotState::brakeLeft()
 {
-	backLeft.set_brake_mode(E_MOTOR_BRAKE_HOLD);
-	frontLeft.set_brake_mode(E_MOTOR_BRAKE_HOLD);
+	backLeft.move(0);
+	backLeft.set_brake_mode(E_MOTOR_BRAKE_COAST);
 }
 void robotState::brakeRight()
 {
-	backRight.set_brake_mode(E_MOTOR_BRAKE_HOLD);
-	frontRight.set_brake_mode(E_MOTOR_BRAKE_HOLD);
+	backRight.move(0);
+	backRight.set_brake_mode(E_MOTOR_BRAKE_COAST);
 }
 void robotState::forward(int voltage, int reps)
 {
-
-		rightMotors(voltage, reps);
-		leftMotors(voltage, reps);
+	backRight.move(-voltage);
+	backLeft.move(voltage);
+	frontMove();
+	for(int i =0; i<reps; i++)
+	{
 		pros::delay(delay);
+	}
 
 	brakeLeft();
 	brakeRight();
-
+	brakeFront();
 }
 void robotState::backward(int voltage, int reps)
 {
-	rightMotors(-voltage, reps);
-	leftMotors(-voltage, reps);
+	backRight.move(voltage);
+	backLeft.move(-voltage);
+	frontMove();
+	for(int i =0; i<reps; i++)
+	{
 		pros::delay(delay);
+	}
 	brakeLeft();
 	brakeRight();
 }
-void robotState::rollerForward(int voltage, int reps)
+void robotState::rollerForward(int voltage)
 {
-	for(int i = 0; i < reps; i++)
-	{
 		roller.move(voltage);
 		pros::delay(delay);
-	}
 }
-void robotState::rollerBackwards(int voltage, int reps)
-{
-	for(int i = 0; i < reps; i++)
-	{
+void robotState::rollerBackwards(int voltage){
 		roller.move(-voltage);
 		pros::delay(delay);
+}
+void robotState::turn(int leftVoltage, int reps)
+{
+	backLeft.move(leftVoltage);
+	backRight.move(leftVoltage);
+	frontMove();
+	for(int i = 0; i <reps; i++)
+	{
+		pros::delay(delay);
 	}
+	brakeLeft();
+	brakeRight();
+	brakeFront();
+}
+void frontMove()
+{
+		front.move((backLeft.get_voltage()+backRight.get_voltage())/2);
 }
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -242,14 +250,14 @@ void robotState::rollerBackwards(int voltage, int reps)
  */
  void initialize() {
      pros::lcd::initialize();
-     pros::lcd::set_text(1, "Gamer Time");
+     pros::lcd::set_text(1, "ChimpBot 2.0");
      pros::lcd::register_btn1_cb(on_center_button);
  //----------------------------------------------------------------------------------------------------------------------experimentalish
-     frontLeft.set_brake_mode(E_MOTOR_BRAKE_COAST);//set_brake_mode(E_MOTOR_BRAKE_COAST); -- for drive motors
-     frontRight.set_brake_mode(E_MOTOR_BRAKE_COAST); // coast = will continue on momentum when button no longer pressed
+  // coast = will continue on momentum when button no longer pressed
      backLeft.set_brake_mode(E_MOTOR_BRAKE_COAST);
      backRight.set_brake_mode(E_MOTOR_BRAKE_COAST);
 		 opcontrol;
+
  }
 
 /**
@@ -275,16 +283,56 @@ void competition_initialize() {}
  * with the default priority and stack size whenever the robot is enabled via
  * the Field Management System or the VEX Competition Switch in the autonomous
  * mode. Alternatively, this function may be called in initialize or opcontrol
- * for non-competition testing purposes.
+ * for non-competition testinsg purposes.
  *
  * If the robot is disabled or communications is lost, the autonomous task
  * will be stopped. Re-enabling the robot will restart the task, not re-start it
  * from where it left off.
  */
-void autonomous() {}
+void autonomous() {
+
+	robotState robot;
+// 	robot.backward(100,100);
+// 	pros::delay(100);
+// 	robot.forward(100,100);
+// 	pros::delay(100);
+// 	robot.raise(25,150);
+// 	pros::delay(500);
+// 	robot.forward(100,300);
+// 	pros::delay(200);
+// 	robot.raise(75, 1650);
+// 	pros::delay(100);
+// 	robot.forward(50, 800);
+// 	pros::delay(100);
+// 	robot.rollerBackwards(-170);
+// 	pros::delay(3000);
+// 	roller.move(0); //new
+// 	//HERE
+// 	robot.backward(50,200);
+// 	pros::delay(100);
+// 	robot.lower(75,1650); //owo - looks good
+// 	pros::delay(100);
+// //	robot.turn(100,1000); 180 degrees
+// 	robot.turn(100,800);
+// 	robot.rollerBackwards(170);
+// 	robot.forward(127,1800);
+// 	pros::delay(100);
+
+
+
+
+
+	// robot.backward(170, 1000);
+	// pros::delay(500);
+	// robot.raise(170, 750);
+	// robot.forward(170,100);
+	// robot.intakeOut(300);
+	// pros::delay(2000);
+	// roller.move_voltage(0);
+	// roller.set_brake_mode(MOTOR_BRAKE_HOLD);
+}
 //ALL VOLTAGES ARE POSITIVE!!!!!!!!!!!
-robotState vexBOT();
-vexBOT.rollerBackwards(10,10);
+
 
 /**
  * Runs the operator control code. This function will be started in its own task
@@ -300,47 +348,54 @@ vexBOT.rollerBackwards(10,10);
  * task, not resume it from where it left off.
  */
 void opcontrol() {
-	double intakeSpeed = 127;
+	double intakeSpeed = 300;
 	double liftSpeed = 127;
 	double intakeLiftSpeed = 75;
-		pros::Controller master(pros::E_CONTROLLER_MASTER);
+	pros::Controller master(pros::E_CONTROLLER_MASTER);
 	controllerState controls;
 
 	while (true) {
 		controls.getControllerState();
-		frontLeft.move(controls.leftStick.y);
 		backLeft.move(controls.leftStick.y);
-		frontRight.move(-controls.rightStick.y);
 		backRight.move(-controls.rightStick.y);
-		if(controls.rightBumper1)
-		{
-			intakeLeft.move(intakeSpeed);
-			intakeRight.move(-intakeSpeed);
-		}
-		else if(controls.rightBumper2)
-		{
-			intakeLeft.move(-intakeSpeed);
-			intakeRight.move(intakeSpeed);
-		}
-		else{
-			intakeLeft.move(0);
-			intakeRight.move(0);
-			intakeRight.set_brake_mode(E_MOTOR_BRAKE_HOLD);
-			intakeLeft.set_brake_mode(E_MOTOR_BRAKE_HOLD);
-		}
-
-		if(controls.leftBumper1)
-		{
-			lift.move(liftSpeed);
-		}
-		else if(controls.leftBumper2)
-		{
-			lift.move(-liftSpeed);
-		}
-		else{
-			lift.move(0);
-			lift.set_brake_mode(E_MOTOR_BRAKE_HOLD);
-		}
+		frontMove();
+		// if(controls.x)
+		// {
+		// 	intakeLeft.move(intakeSpeed);
+		// 	intakeRight.move(-intakeSpeed);
+		// }
+		// else{
+		// 	// intakeLeft.set_brake_mode(MOTOR_BRAKE_COAST);
+		// 	// intakeRight.set_brake_mode(MOTOR_BRAKE_COAST);
+		// }
+		// if(controls.rightBumper2)
+		// {
+		// 	roller.move(intakeSpeed);
+		// }
+		// else if(controls.rightBumper1)
+		// {
+		// 		roller.move(-intakeSpeed);
+		// }
+		// else{
+		// 	roller.move(0);
+		// 	roller.set_brake_mode(E_MOTOR_BRAKE_HOLD);
+		// }
+		// if(controls.b)
+		// {
+		// 	autonomous();
+		// }
+		// if(controls.leftBumper1)
+		// {
+		// 	lift.move(liftSpeed);
+		// }
+		// else if(controls.leftBumper2)
+		// {
+		// 	lift.move(-liftSpeed);
+		// }
+		// else{
+		// 	lift.move(0);
+		// 	lift.set_brake_mode(E_MOTOR_BRAKE_HOLD);
+		// }
 
 
 		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
